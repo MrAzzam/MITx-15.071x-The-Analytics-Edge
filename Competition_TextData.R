@@ -74,7 +74,8 @@ HeadlineWordsTest$WordCount = NewsTest$WordCount
 # Now let's create a logistic regression model using all of the variables:
 
 HeadlineWordsLog = glm(Popular ~ ., data=HeadlineWordsTrain, family=binomial)
-
+PredTrain = predict(HeadlineWordsLog, newdata=HeadlineWordsTrain, type="response")
+table(HeadlineWordsLog$Popular, PredTrain>0.5)
 # And make predictions on our test set:
 
 PredTest = predict(HeadlineWordsLog, newdata=HeadlineWordsTest, type="response")
