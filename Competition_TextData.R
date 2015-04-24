@@ -9,8 +9,6 @@ normalize <- function(input) {
   input$IsOpinion = input$SectionName == "Opinion"
   input$WordCount = as.integer(input$WordCount/100)
   input$LessThan2000 = input$WordCount<=20
-  input$NewsDesk = as.factor(input$NewsDesk)
-  input$SectionName = as.factor(input$SectionName)
   input$SubsectionName = as.factor(input$SubsectionName)
   input
 }
@@ -56,14 +54,10 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 
 HeadlineWordsTrain$Popular = NewsTrain$Popular
 HeadlineWordsTrain$LessThan2000 = NewsTrain$LessThan2000
-HeadlineWordsTrain$NewsDesk = NewsTrain$NewsDesk
-HeadlineWordsTrain$SectionName = NewsTrain$NewsSectionName
 HeadlineWordsTrain$IsOpEd = NewsTrain$IsOpEd
 HeadlineWordsTrain$IsOpinion = NewsTrain$IsOpinion
 
 HeadlineWordsTest$LessThan2000 = NewsTest$LessThan2000
-HeadlineWordsTest$NewsDesk = NewsTest$NewsDesk
-HeadlineWordsTest$SectionName = NewsTest$SectionName
 HeadlineWordsTest$IsOpEd = NewsTest$IsOpEd
 HeadlineWordsTest$IsOpinion = NewsTest$IsOpinion
 
@@ -85,8 +79,8 @@ printf("auc train %f", auc)
 
 # Test Data
 PredTest = predict(nytRF, newdata=HeadlineWordsTest)
-# Now we can prepare our submission file for Kaggle:
 PredTest[PredTest<0] = 0
+
 MySubmission = data.frame(UniqueID = NewsTest$UniqueID, Probability1 = PredTest)
 write.csv(MySubmission, "SubmissionHeadlineLog.csv", row.names=FALSE)
 
