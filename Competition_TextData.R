@@ -64,15 +64,30 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 # set, and the WordCount variable to both datasets. You might want to add back more
 # variables to use in your model - we'll leave this up to you!
 
+updatevar <- function(v1, v2) {
+  v1$LessThan2000 = v2$LessThan2000
+  v1$IsOpEd = v2$IsOpEd
+
+  v1$IsBusiness = v2$IsBusiness
+  v1$IsCulture = v2$IsCulture
+  v1$IsScience = v2$IsScience
+  v1$IsStyles = v2$IsStyles
+  v1$IsMetro = v2$IsMetro
+  
+  v1$IsOpinion = v2$IsOpinion
+  v1$IsDay     = v2$IsDay
+  v1$IsArts    = v2$IsArts
+  v1$IsGames   = v2$IsGames
+  v1$ISHealth  = v2$IsHealth
+  v1$IsTechnology = v2$IsTechnology
+  v1$IsUS         = v2$IsUS
+  v1
+}
+
+HeadlineWordsTest  = updatevar(HeadlineWordsTest, NewsTest)
+HeadlineWordsTrain = updatevar(HeadlineWordsTrain, NewsTrain)
+
 HeadlineWordsTrain$Popular = NewsTrain$Popular
-HeadlineWordsTrain$LessThan2000 = NewsTrain$LessThan2000
-HeadlineWordsTrain$IsOpEd = NewsTrain$IsOpEd
-HeadlineWordsTrain$IsOpinion = NewsTrain$IsOpinion
-
-HeadlineWordsTest$LessThan2000 = NewsTest$LessThan2000
-HeadlineWordsTest$IsOpEd = NewsTest$IsOpEd
-HeadlineWordsTest$IsOpinion = NewsTest$IsOpinion
-
 # Random Forest
 
 library(randomForest)
