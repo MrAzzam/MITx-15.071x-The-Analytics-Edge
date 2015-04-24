@@ -5,11 +5,23 @@ NewsTrain = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
 NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
 
 normalize <- function(input) {
+  input$IsBusiness = input$NewsDesk == "Business"
+  input$IsCulture = input$NewsDesk == "Culture"
+  input$IsScience = input$NewsDesk == "Science"
+  input$IsStyles = input$NewsDesk == "Styles"
+  input$IsMetro = input$NewsDesk == "Metro"
   input$IsOpEd = input$NewsDesk == "OpEd"
+  
   input$IsOpinion = input$SectionName == "Opinion"
+  input$IsDay     = input$SectionName == "Day"
+  input$IsArts    = input$SectionName == "Arts"
+  input$IsGames   = input$SectionName == "Games"
+  input$ISHealth  = input$SectionName == "Health"
+  input$IsTechnology = input$SectionName == "Technology"
+  input$IsUS         = input$SectionName == "U.S."
+  
   input$WordCount = as.integer(input$WordCount/100)
   input$LessThan2000 = input$WordCount<=20
-  input$SubsectionName = as.factor(input$SubsectionName)
   input
 }
 
