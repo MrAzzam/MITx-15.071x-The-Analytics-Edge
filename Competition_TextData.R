@@ -1,33 +1,30 @@
-# KAGGLE COMPETITION - DEALING WITH THE TEXT DATA
-# This script file is intended to help you deal with the text data provided in the competition data 
-# files. If you haven't already, start by reading the data into R
-# Make sure you have downloaded these files from the Kaggle website,
-# and have navigated to the directory where you saved the files on your computer 
-
 # We are adding in the argument stringsAsFactors=FALSE, since we have some text fields
 
 set.seed(1000)
 NewsTrain = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
 NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
 
-NewsTrain$NewsDesk = as.factor(NewsTrain$NewsDesk)
-NewsTrain$SectionName = as.factor(NewsTrain$SectionName)
-NewsTrain$SubsectionName = as.factor(NewsTrain$SubsectionName)
+normalize <- function(input) {
+  input$IsOpEd = input$NewsDesk == "OpEd"
+  input$IsOpinion = input$SectionName == "Opinion"
+  input$WordCount = as.integer(input$WordCount/100)
+  input$LessThan2000 = input$WordCount<=20
+  input$NewsDesk = as.factor(input$NewsDesk)
+  input$SectionName = as.factor(input$SectionName)
+  input$SubsectionName = as.factor(input$SubsectionName)
+  input
+}
 
-NewsTest$NewsDesk = as.factor(NewsTest$NewsDesk)
-NewsTest$SectionName = as.factor(NewsTest$SectionName)
-NewsTest$SubsectionName = as.factor(NewsTest$SubsectionName)
-# Now, let's load the "tm" package
+NewsTrain = normalize(NewsTrain)
+NewsTest = normalize(NewsTest)
 
 library(tm)
 
-# Then create a corpus from the headline variable. You can use other variables in the 
-# dataset for text analytics, but we will just show you how to use this particular 
-# variable. Note that we are creating a corpus out of the training and testing data.
+# TRAINING DATA
 
-CorpusHeadline = Corpus(VectorSource(c(NewsTrain$Snippet)))
+CorpusHeadline = Corpus(VectorSource(c(NewsTrain$Snippet, NewsTest$Snippet)))
 
-# You can go through all of the standard pre-processing steps like we did in Unit 5:
+# Preprocessing
 
 CorpusHeadline = tm_map(CorpusHeadline, tolower)
 CorpusHeadline = tm_map(CorpusHeadline, PlainTextDocument)
@@ -35,8 +32,8 @@ CorpusHeadline = tm_map(CorpusHeadline, removePunctuation)
 CorpusHeadline = tm_map(CorpusHeadline, removeWords, stopwords("english"))
 CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
 
-# Now we are ready to convert our corpus to a DocumentTermMatrix, remove sparse terms, and turn it into a data frame. 
-# We selected one particular threshold to remove sparse terms, but remember that you can try different numbers!
+# convert our corpus to a DocumentTermMatrix,
+# remove sparse terms, and turn it into a data frame. 
 
 dtm = DocumentTermMatrix(CorpusHeadline)
 sparse = removeSparseTerms(dtm, 0.98)
@@ -44,54 +41,8 @@ HeadlineWords = as.data.frame(as.matrix(sparse))
 
 # Let's make sure our variable names are okay for R:
 colnames(HeadlineWords) = make.names(colnames(HeadlineWords))
-
-# Now we need to split the observations back into the training set and testing set.
-# To do this, we can use the head and tail functions in R. 
-# The head function takes the first "n" rows of HeadlineWords 
-# (the first argument to the head function), where "n" is specified by the second 
-# argument to the head function. 
-# So here we are taking the first nrow(NewsTrain) observations from HeadlineWords, 
-# and putting them in a new data frame called "HeadlineWordsTrain"
 
 HeadlineWordsTrain = head(HeadlineWords, nrow(NewsTrain))
-
-# The tail function takes the last "n" rows of HeadlineWords (the first argument 
-# to the tail function), where "n" is specified by the second argument to the tail 
-# function. So here we are taking the last nrow(NewsTest) observations from 
-# HeadlineWords, and putting them in a new data frame called "HeadlineWordsTest"
-
-
-# --------------
-  
-
-CorpusHeadline = Corpus(VectorSource(c(NewsTest$Snippet)))
-
-# You can go through all of the standard pre-processing steps like we did in Unit 5:
-
-CorpusHeadline = tm_map(CorpusHeadline, tolower)
-CorpusHeadline = tm_map(CorpusHeadline, PlainTextDocument)
-CorpusHeadline = tm_map(CorpusHeadline, removePunctuation)
-CorpusHeadline = tm_map(CorpusHeadline, removeWords, stopwords("english"))
-CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
-
-# Now we are ready to convert our corpus to a DocumentTermMatrix, remove sparse terms, and turn it into a data frame. 
-# We selected one particular threshold to remove sparse terms, but remember that you can try different numbers!
-
-dtm = DocumentTermMatrix(CorpusHeadline)
-sparse = removeSparseTerms(dtm, 0.98)
-HeadlineWords = as.data.frame(as.matrix(sparse))
-
-# Let's make sure our variable names are okay for R:
-colnames(HeadlineWords) = make.names(colnames(HeadlineWords))
-
-# Now we need to split the observations back into the training set and testing set.
-# To do this, we can use the head and tail functions in R. 
-# The head function takes the first "n" rows of HeadlineWords 
-# (the first argument to the head function), where "n" is specified by the second 
-# argument to the head function. 
-# So here we are taking the first nrow(NewsTrain) observations from HeadlineWords, 
-# and putting them in a new data frame called "HeadlineWordsTrain"
-
 HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 
 # -------------
@@ -104,57 +55,38 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 # variables to use in your model - we'll leave this up to you!
 
 HeadlineWordsTrain$Popular = NewsTrain$Popular
-HeadlineWordsTrain$WordCount = NewsTrain$WordCount
+HeadlineWordsTrain$LessThan2000 = NewsTrain$LessThan2000
 HeadlineWordsTrain$NewsDesk = NewsTrain$NewsDesk
 HeadlineWordsTrain$SectionName = NewsTrain$NewsSectionName
+HeadlineWordsTrain$IsOpEd = NewsTrain$IsOpEd
+HeadlineWordsTrain$IsOpinion = NewsTrain$IsOpinion
 
-HeadlineWordsTest$WordCount = NewsTest$WordCount
+HeadlineWordsTest$LessThan2000 = NewsTest$LessThan2000
 HeadlineWordsTest$NewsDesk = NewsTest$NewsDesk
 HeadlineWordsTest$SectionName = NewsTest$SectionName
+HeadlineWordsTest$IsOpEd = NewsTest$IsOpEd
+HeadlineWordsTest$IsOpinion = NewsTest$IsOpinion
 
-# Remember that you can always look at the structure of these data frames to 
-# understand what we have created
-# Now let's create a logistic regression model using all of the variables:
-
-#HeadlineWordsLog = glm(Popular ~ ., data=HeadlineWordsTrain, family=binomial)
-#PredTrain = predict(HeadlineWordsLog, newdata=HeadlineWordsTrain, type="response")
-#=table(HeadlineWordsTrain$Popular, PredTrain>0.5)
-# And make predictions on our test set:
+# Random Forest
 
 library(randomForest)
 library(ROCR)
 
 printf <- function(...) cat(sprintf(...))
-
-# RF Model
 nytRF = randomForest(Popular ~ ., data=HeadlineWordsTrain)
 
-# Training Data
 predictRF = predict(nytRF, newdata=HeadlineWordsTrain)
-confusion = table(HeadlineWordsTrain$Popular, predictRF>0.5)
-
 predROCR = prediction(predictRF, HeadlineWordsTrain$Popular)
 perfROCR = performance(predROCR, "tpr", "fpr")
 plot(perfROCR, colorize=TRUE)
 auc = performance(predROCR, "auc")@y.values
 
-totalrows = nrow(HeadlineWordsTrain)
-baseLine = sum(confusion[1,])/totalrows
-
-printf("baseline %f",baseLine)
-accuracy = (confusion[1,1]+confusion[2,2])/totalrows
-printf("accuracy train %f",accuracy)
 printf("auc train %f", auc)
 
 # Test Data
 PredTest = predict(nytRF, newdata=HeadlineWordsTest)
-
 # Now we can prepare our submission file for Kaggle:
 PredTest[PredTest<0] = 0
 MySubmission = data.frame(UniqueID = NewsTest$UniqueID, Probability1 = PredTest)
-
 write.csv(MySubmission, "SubmissionHeadlineLog.csv", row.names=FALSE)
 
-# You should upload the submission "SubmissionHeadlineLog.csv" on the Kaggle website to use this as a submission to the competition
-
-# This script file was just designed to help you get started - to do well in the competition, you will need to build better models!
