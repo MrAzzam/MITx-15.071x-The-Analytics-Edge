@@ -10,6 +10,13 @@ set.seed(1000)
 NewsTrain = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
 NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
 
+NewsTrain$NewsDesk = as.factor(NewsTrain$NewsDesk)
+NewsTrain$SectionName = as.factor(NewsTrain$SectionName)
+NewsTrain$SubsectionName = as.factor(NewsTrain$SubsectionName)
+
+NewsTest$NewsDesk = as.factor(NewsTest$NewsDesk)
+NewsTest$SectionName = as.factor(NewsTest$SectionName)
+NewsTest$SubsectionName = as.factor(NewsTest$SubsectionName)
 # Now, let's load the "tm" package
 
 library(tm)
@@ -35,7 +42,7 @@ CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
 # We selected one particular threshold to remove sparse terms, but remember that you can try different numbers!
 
 dtm = DocumentTermMatrix(CorpusHeadline)
-sparse = removeSparseTerms(dtm, 0.99)
+sparse = removeSparseTerms(dtm, 0.98)
 HeadlineWords = as.data.frame(as.matrix(sparse))
 
 # Let's make sure our variable names are okay for R:
@@ -60,8 +67,12 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 
 HeadlineWordsTrain$Popular = NewsTrain$Popular
 HeadlineWordsTrain$WordCount = NewsTrain$WordCount
+HeadlineWordsTrain$NewsDesk = NewsTrain$NewsDesk
+HeadlineWordsTrain$SectionName = NewsTrain$NewsSectionName
 
 HeadlineWordsTest$WordCount = NewsTest$WordCount
+HeadlineWordsTest$NewsDesk = NewsTest$NewsDesk
+HeadlineWordsTest$SectionName = NewsTest$SectionName
 
 # Remember that you can always look at the structure of these data frames to understand what we have created
 
