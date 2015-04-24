@@ -6,7 +6,7 @@
 # Make sure you have downloaded these files from the Kaggle website, and have navigated to the directory where you saved the files on your computer 
 
 # We are adding in the argument stringsAsFactors=FALSE, since we have some text fields
-
+set.seed(1000)
 NewsTrain = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
 
 NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
@@ -18,7 +18,7 @@ library(tm)
 # Then create a corpus from the headline variable. You can use other variables in the dataset for text analytics, but we will just show you how to use this particular variable. 
 # Note that we are creating a corpus out of the training and testing data.
 
-CorpusHeadline = Corpus(VectorSource(c(NewsTrain$Headline, NewsTest$Headline)))
+CorpusHeadline = Corpus(VectorSource(c(NewsTrain$Snippet, NewsTest$Snippet)))
 
 # You can go through all of the standard pre-processing steps like we did in Unit 5:
 
@@ -39,7 +39,7 @@ CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
 
 dtm = DocumentTermMatrix(CorpusHeadline)
 
-sparse = removeSparseTerms(dtm, 0.99)
+sparse = removeSparseTerms(dtm, 0.98)
 
 HeadlineWords = as.data.frame(as.matrix(sparse))
 
@@ -73,13 +73,34 @@ HeadlineWordsTest$WordCount = NewsTest$WordCount
 
 # Now let's create a logistic regression model using all of the variables:
 
-HeadlineWordsLog = glm(Popular ~ ., data=HeadlineWordsTrain, family=binomial)
-PredTrain = predict(HeadlineWordsLog, newdata=HeadlineWordsTrain, type="response")
-table(HeadlineWordsLog$Popular, PredTrain>0.5)
+#HeadlineWordsLog = glm(Popular ~ ., data=HeadlineWordsTrain, family=binomial)
+#PredTrain = predict(HeadlineWordsLog, newdata=HeadlineWordsTrain, type="response")
+#=table(HeadlineWordsTrain$Popular, PredTrain>0.5)
 # And make predictions on our test set:
 
-PredTest = predict(HeadlineWordsLog, newdata=HeadlineWordsTest, type="response")
+library(randomForest)
+tweetRF = randomForest(Popular ~ ., data=HeadlineWordsTrain)
+predictRF = predict(tweetRF, newdata=HeadlineWordsTrain)
+confusion = table(HeadlineWordsTrain$Popular, predictRF>0.5)
+# And make predictions on our test set:
 
+library(ROCR)
+predROCR = prediction(predictRF, HeadlineWordsTrain$Popular)
+perfROCR = performance(predROCR, "tpr", "fpr")
+plot(perfROCR, colorize=TRUE)
+# Compute AUC
+auc = performance(predROCR, "auc")@y.values
+
+###
+totalrows = nrow(HeadlineWordsTrain)
+baseLine = sum(confusion[1,])/totalrows
+#accuracy = (confusion[1,1]+confusion[2,2])/totalrows
+printf <- function(...) cat(sprintf(...))
+printf("baseline %f",baseLine)
+#printf("accuracy %f",accuracy)
+printf("auc train %f", auc)
+
+PredTest = predict(tweetRF, newdata=HeadlineWordsTest, type="response")
 
 # Now we can prepare our submission file for Kaggle:
 
