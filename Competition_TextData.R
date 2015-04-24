@@ -8,15 +8,15 @@
 # We are adding in the argument stringsAsFactors=FALSE, since we have some text fields
 set.seed(1000)
 NewsTrain = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
-
 NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
 
 # Now, let's load the "tm" package
 
 library(tm)
 
-# Then create a corpus from the headline variable. You can use other variables in the dataset for text analytics, but we will just show you how to use this particular variable. 
-# Note that we are creating a corpus out of the training and testing data.
+# Then create a corpus from the headline variable. You can use other variables in the 
+# dataset for text analytics, but we will just show you how to use this particular 
+# variable. Note that we are creating a corpus out of the training and testing data.
 
 CorpusHeadline = Corpus(VectorSource(c(NewsTrain$Snippet, NewsTest$Snippet)))
 
@@ -27,20 +27,15 @@ CorpusHeadline = tm_map(CorpusHeadline, tolower)
 # Remember this extra line is needed after running the tolower step:
 
 CorpusHeadline = tm_map(CorpusHeadline, PlainTextDocument)
-
 CorpusHeadline = tm_map(CorpusHeadline, removePunctuation)
-
 CorpusHeadline = tm_map(CorpusHeadline, removeWords, stopwords("english"))
-
 CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
 
 # Now we are ready to convert our corpus to a DocumentTermMatrix, remove sparse terms, and turn it into a data frame. 
 # We selected one particular threshold to remove sparse terms, but remember that you can try different numbers!
 
 dtm = DocumentTermMatrix(CorpusHeadline)
-
-sparse = removeSparseTerms(dtm, 0.98)
-
+sparse = removeSparseTerms(dtm, 0.99)
 HeadlineWords = as.data.frame(as.matrix(sparse))
 
 # Let's make sure our variable names are okay for R:
@@ -64,8 +59,9 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 # Before building models, we want to add back the original variables from our datasets. We'll add back the dependent variable to the training set, and the WordCount variable to both datasets. You might want to add back more variables to use in your model - we'll leave this up to you!
 
 HeadlineWordsTrain$Popular = NewsTrain$Popular
-
 HeadlineWordsTrain$WordCount = NewsTrain$WordCount
+
+HeadlineWordsTest$Popular = NewsTest$Popular
 HeadlineWordsTest$WordCount = NewsTest$WordCount
 
 # Remember that you can always look at the structure of these data frames to understand what we have created
@@ -79,28 +75,32 @@ HeadlineWordsTest$WordCount = NewsTest$WordCount
 # And make predictions on our test set:
 
 library(randomForest)
-tweetRF = randomForest(Popular ~ ., data=HeadlineWordsTrain)
-predictRF = predict(tweetRF, newdata=HeadlineWordsTrain)
-confusion = table(HeadlineWordsTrain$Popular, predictRF>0.5)
-# And make predictions on our test set:
-
 library(ROCR)
+
+printf <- function(...) cat(sprintf(...))
+
+# RF Model
+nytRF = randomForest(Popular ~ ., data=HeadlineWordsTrain)
+
+# Training Data
+predictRF = predict(nytRF, newdata=HeadlineWordsTrain)
+confusion = table(HeadlineWordsTrain$Popular, predictRF>0.5)
+
 predROCR = prediction(predictRF, HeadlineWordsTrain$Popular)
 perfROCR = performance(predROCR, "tpr", "fpr")
 plot(perfROCR, colorize=TRUE)
-# Compute AUC
 auc = performance(predROCR, "auc")@y.values
 
-###
 totalrows = nrow(HeadlineWordsTrain)
 baseLine = sum(confusion[1,])/totalrows
-#accuracy = (confusion[1,1]+confusion[2,2])/totalrows
-printf <- function(...) cat(sprintf(...))
+
 printf("baseline %f",baseLine)
-#printf("accuracy %f",accuracy)
+accuracy = (confusion[1,1]+confusion[2,2])/totalrows
+printf("accuracy train %f",accuracy)
 printf("auc train %f", auc)
 
-PredTest = predict(tweetRF, newdata=HeadlineWordsTest, type="response")
+# Test Data
+PredTest = predict(nytRF, newdata=HeadlineWordsTest)
 
 # Now we can prepare our submission file for Kaggle:
 
