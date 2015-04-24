@@ -61,7 +61,6 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 HeadlineWordsTrain$Popular = NewsTrain$Popular
 HeadlineWordsTrain$WordCount = NewsTrain$WordCount
 
-HeadlineWordsTest$Popular = NewsTest$Popular
 HeadlineWordsTest$WordCount = NewsTest$WordCount
 
 # Remember that you can always look at the structure of these data frames to understand what we have created
@@ -103,7 +102,7 @@ printf("auc train %f", auc)
 PredTest = predict(nytRF, newdata=HeadlineWordsTest)
 
 # Now we can prepare our submission file for Kaggle:
-
+PredTest[PredTest<0] = 0
 MySubmission = data.frame(UniqueID = NewsTest$UniqueID, Probability1 = PredTest)
 
 write.csv(MySubmission, "SubmissionHeadlineLog.csv", row.names=FALSE)
