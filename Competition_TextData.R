@@ -20,6 +20,8 @@ normalize <- function(input) {
   input$IsTechnology = input$SectionName == "Technology"
   input$IsUS         = input$SectionName == "U.S."
   
+  input$IsDealbook = input$SubsectionName == "Dealbook"
+  
   input$Date = strptime(input$PubDate, format="%Y-%m-%d %H:%M:%S")
   input$Weekday = weekdays(input$Date)
   input$Hour = input$Date$hour
@@ -55,7 +57,7 @@ CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
 # remove sparse terms, and turn it into a data frame. 
 
 dtm = DocumentTermMatrix(CorpusHeadline)
-sparse = removeSparseTerms(dtm, 0.99)
+sparse = removeSparseTerms(dtm, 0.98)
 HeadlineWords = as.data.frame(as.matrix(sparse))
 
 # Let's make sure our variable names are okay for R:
@@ -91,6 +93,8 @@ updatevar <- function(v1, v2) {
   v1$IsTechnology = v2$IsTechnology
   v1$IsUS         = v2$IsUS
   
+  v1$IsDealbook = v2$IsDealbook
+  
   v1$Weekday = as.factor(v2$Weekday)
   v1$Hour = as.factor(v2$Hour)
   
@@ -107,6 +111,9 @@ library(randomForest)
 library(ROCR)
 
 printf <- function(...) cat(sprintf(...))
+
+model_randomforest<-function(HeadlineWordsTrain, HeadlineWordsTest)
+{
 nytRF = randomForest(Popular ~ ., data=HeadlineWordsTrain)
 
 predictRF = predict(nytRF, newdata=HeadlineWordsTrain)
@@ -114,8 +121,12 @@ predROCR = prediction(predictRF, HeadlineWordsTrain$Popular)
 perfROCR = performance(predROCR, "tpr", "fpr")
 plot(perfROCR, colorize=TRUE)
 auc = performance(predROCR, "auc")@y.values
-
 printf("auc train %f", auc)
+nytRF
+}
+
+nytRF = model_randomforest(HeadlineWordsTrain, HeadlineWordsTest)
+
 
 # Test Data
 PredTest = predict(nytRF, newdata=HeadlineWordsTest)
