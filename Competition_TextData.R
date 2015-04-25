@@ -55,7 +55,7 @@ CorpusHeadline = tm_map(CorpusHeadline, stemDocument)
 # remove sparse terms, and turn it into a data frame. 
 
 dtm = DocumentTermMatrix(CorpusHeadline)
-sparse = removeSparseTerms(dtm, 0.98)
+sparse = removeSparseTerms(dtm, 0.99)
 HeadlineWords = as.data.frame(as.matrix(sparse))
 
 # Let's make sure our variable names are okay for R:
@@ -91,9 +91,8 @@ updatevar <- function(v1, v2) {
   v1$IsTechnology = v2$IsTechnology
   v1$IsUS         = v2$IsUS
   
-  v1$isSat = v2$isSat
-  v1$isSun = v2$isSun
-  v1$is6to22 = v2$is6to22
+  v1$Weekday = as.factor(v2$Weekday)
+  v1$Hour = as.factor(v2$Hour)
   
   v1
 }
