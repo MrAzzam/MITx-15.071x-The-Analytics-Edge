@@ -20,8 +20,17 @@ normalize <- function(input) {
   input$IsTechnology = input$SectionName == "Technology"
   input$IsUS         = input$SectionName == "U.S."
   
+  input$Date = strptime(input$PubDate, format="%Y-%m-%d %H:%M:%S")
+  input$Weekday = weekdays(input$Date)
+  input$Hour = input$Date$hour
+  
   input$WordCount = as.integer(input$WordCount/100)
   input$LessThan2000 = input$WordCount<=20
+  
+  input$is6to22 = input$Hour>=6 & input$Hour<=22
+  input$isSat = input$Weekday == "Saturday"
+  input$isSun = input$Weekday == "Sunday"
+  
   input
 }
 
@@ -81,6 +90,11 @@ updatevar <- function(v1, v2) {
   v1$ISHealth  = v2$IsHealth
   v1$IsTechnology = v2$IsTechnology
   v1$IsUS         = v2$IsUS
+  
+  v1$isSat = v2$isSat
+  v1$isSun = v2$isSun
+  v1$is6to22 = v2$is6to22
+  
   v1
 }
 
