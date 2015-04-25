@@ -2,42 +2,15 @@
 
 set.seed(1000)
 NewsTrain = read.csv("NYTimesBlogTrain.csv", stringsAsFactors=FALSE)
+NewsTrain = subset(NewsTrain, NewsTrain$NewsDesk!="National")
+NewsTrain = subset(NewsTrain, NewsTrain$NewsDesk!="Sports")
+NewsTrain = subset(NewsTrain, NewsTrain$SectionName!="Style")
+NewsTrain$WordCount = as.integer(NewsTrain$WordCount/100)
+NewsTrain$LessThan2000 = NewsTrain$WordCount<=20
+
 NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
-
-normalize <- function(input) {
-  input$IsBusiness = input$NewsDesk == "Business"
-  input$IsCulture = input$NewsDesk == "Culture"
-  input$IsScience = input$NewsDesk == "Science"
-  input$IsStyles = input$NewsDesk == "Styles"
-  input$IsMetro = input$NewsDesk == "Metro"
-  input$IsOpEd = input$NewsDesk == "OpEd"
-  
-  input$IsOpinion = input$SectionName == "Opinion"
-  input$IsDay     = input$SectionName == "Day"
-  input$IsArts    = input$SectionName == "Arts"
-  input$IsGames   = input$SectionName == "Games"
-  input$ISHealth  = input$SectionName == "Health"
-  input$IsTechnology = input$SectionName == "Technology"
-  input$IsUS         = input$SectionName == "U.S."
-  
-  input$IsDealbook = input$SubsectionName == "Dealbook"
-  
-  input$Date = strptime(input$PubDate, format="%Y-%m-%d %H:%M:%S")
-  input$Weekday = weekdays(input$Date)
-  input$Hour = input$Date$hour
-  
-  input$WordCount = as.integer(input$WordCount/100)
-  input$LessThan2000 = input$WordCount<=20
-  
-  input$is6to22 = input$Hour>=6 & input$Hour<=22
-  input$isSat = input$Weekday == "Saturday"
-  input$isSun = input$Weekday == "Sunday"
-  
-  input
-}
-
-NewsTrain = normalize(NewsTrain)
-NewsTest = normalize(NewsTest)
+NewsTest$WordCount = as.integer(NewsTest$WordCount/100)
+NewsTest$LessThan2000 = NewsTest$WordCount<=20
 
 library(tm)
 
@@ -75,36 +48,24 @@ HeadlineWordsTest = tail(HeadlineWords, nrow(NewsTest))
 # set, and the WordCount variable to both datasets. You might want to add back more
 # variables to use in your model - we'll leave this up to you!
 
-updatevar <- function(v1, v2) {
-  v1$LessThan2000 = v2$LessThan2000
-  v1$IsOpEd = v2$IsOpEd
+HeadlineWordsTest$NewsDesk  = as.factor(NewsTest$NewsDesk)
+HeadlineWordsTest$SectionName = as.factor(NewsTest$SectionName)
+HeadlineWordsTest$SubsectionName = as.factor(NewsTest$SubsectionName)
+Date = strptime(NewsTest$PubDate, format="%Y-%m-%d %H:%M:%S")
+HeadlineWordsTest$Weekday = as.factor(weekdays(Date))
+HeadlineWordsTest$Hour = as.factor(Date$hour)
+HeadlineWordsTest$WordCount = NewsTest$WordCount
 
-  v1$IsBusiness = v2$IsBusiness
-  v1$IsCulture = v2$IsCulture
-  v1$IsScience = v2$IsScience
-  v1$IsStyles = v2$IsStyles
-  v1$IsMetro = v2$IsMetro
-  
-  v1$IsOpinion = v2$IsOpinion
-  v1$IsDay     = v2$IsDay
-  v1$IsArts    = v2$IsArts
-  v1$IsGames   = v2$IsGames
-  v1$ISHealth  = v2$IsHealth
-  v1$IsTechnology = v2$IsTechnology
-  v1$IsUS         = v2$IsUS
-  
-  v1$IsDealbook = v2$IsDealbook
-  
-  v1$Weekday = as.factor(v2$Weekday)
-  v1$Hour = as.factor(v2$Hour)
-  
-  v1
-}
-
-HeadlineWordsTest  = updatevar(HeadlineWordsTest, NewsTest)
-HeadlineWordsTrain = updatevar(HeadlineWordsTrain, NewsTrain)
+HeadlineWordsTrain$NewsDesk = as.factor(NewsTrain$NewsDesk)
+HeadlineWordsTrain$SectionName = as.factor(NewsTrain$SectionName)
+HeadlineWordsTrain$SubsectionName = as.factor(NewsTrain$SubsectionName)
+Date = strptime(NewsTrain$PubDate, format="%Y-%m-%d %H:%M:%S")
+HeadlineWordsTrain$Weekday = as.factor(weekdays(Date))
+HeadlineWordsTrain$Hour = as.factor(Date$hour)
+HeadlineWordsTrain$WordCount = NewsTrain$WordCount
 
 HeadlineWordsTrain$Popular = NewsTrain$Popular
+
 # Random Forest
 
 library(randomForest)
@@ -114,7 +75,7 @@ printf <- function(...) cat(sprintf(...))
 
 model_randomforest<-function(HeadlineWordsTrain, HeadlineWordsTest)
 {
-nytRF = randomForest(Popular ~ ., data=HeadlineWordsTrain)
+nytRF = randomForest(Popular ~ . - WordCount, data=HeadlineWordsTrain)
 
 predictRF = predict(nytRF, newdata=HeadlineWordsTrain)
 predROCR = prediction(predictRF, HeadlineWordsTrain$Popular)
