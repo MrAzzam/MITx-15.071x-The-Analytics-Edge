@@ -109,16 +109,6 @@ Test$WordCount = NewsTest$WordCount
 
 testsubsets = split(Test, Test$NewsDesk)
 
-# Random Forest Model
-#nytRF = modelrf(Train)
-
-#models = list()
-#for (i in 1:11) {
-#   if (i!=5) {
-#   list[[i]] = modelrf(trainsubsets[[i]])
-#  }
-#}
-
 predtests = list()
 for (i in 1:11) {
   if (i!=5) {
@@ -133,11 +123,6 @@ for (i in 1:11) {
     predtests[[5]] = rep(0.0,nrow(testsubsets[[5]]))
 }
 
-# Test Data
-
-#PredTest = predict(nytRF, newdata=Test)
-#PredTest[PredTest<0] = 0
-# Generate Submission Data
 df = list()
 for (i in 1:11) {
   printf("i = %d\n",i)
@@ -156,6 +141,6 @@ MySubmission = Reduce(function(x, y) merge(x, y, all=TRUE),
                            df[[9]],
                            df[[10]],
                            df[[11]]))
-#MySubmission = data.frame(UniqueID = NewsTest$UniqueID, Probability1 = PredTest)
+
 write.csv(MySubmission, "SubmissionHeadlineLog.csv", row.names=FALSE)
 
