@@ -73,41 +73,65 @@ NewsTest$NewsDesk = as.factor(NewsTest$NewsDesk)
 NewsTest$SectionName = as.factor(NewsTest$SectionName)
 NewsTest$SubsectionName = as.factor(NewsTest$SubsectionName)
 
-# TRAINING DATA
-bagofwords = getwords(c(NewsTrain$Snippet, NewsTest$Snippet), ratio = 0.99)
+trains = split(NewsTrain, NewsTrain$NewsDesk)
+tests = split(NewsTest, NewsTest$NewsDesk)
+trainsubsets = list()
+testsubsets = list()
 
-colnames(bagofwords) = make.names(colnames(bagofwords))
+# TRAINING DATA
+for (i in 1:11) {
+  bagofwords = getwords(c(trains[[i]]$Snippet, tests[[i]]$Snippet), ratio = 0.99)
+  colnames(bagofwords) = make.names(colnames(bagofwords))
+  trainsubsets[[i]] = head(bagofwords, nrow(trains[[i]]))
+  testsubsets[[i]] = tail(bagofwords, nrow(tests[[i]]))
+}
 
 # Packing Independent Variables
-Train = head(bagofwords, nrow(NewsTrain))
-Test = tail(bagofwords, nrow(NewsTest))
+#Train = head(bagofwords, nrow(NewsTrain))
+#Test = tail(bagofwords, nrow(NewsTest))
 
-Train$UniqueID = NewsTrain$UniqueID
-Train$NewsDesk = NewsTrain$NewsDesk
-Train$SectionName = NewsTrain$SectionName
-Train$SubsectionName = NewsTrain$SubsectionName
-Date = strptime(NewsTrain$PubDate, format="%Y-%m-%d %H:%M:%S")
-Train$Weekday = as.factor(weekdays(Date))
-Train$Hour = as.factor(Date$hour)
-Train$WordCount = NewsTrain$WordCount
-Train$Popular = NewsTrain$Popular
-#remove Magazine column
-#Train = subset(Train, Train$NewsDesk!="Magazine")
+#Train$UniqueID = NewsTrain$UniqueID
+#Train$NewsDesk = NewsTrain$NewsDesk
+#Train$SectionName = NewsTrain$SectionName
+#Train$SubsectionName = NewsTrain$SubsectionName
+#Date = strptime(NewsTrain$PubDate, format="%Y-%m-%d %H:%M:%S")
+#Train$Weekday = as.factor(weekdays(Date))
+#Train$Hour = as.factor(Date$hour)
+#Train$WordCount = NewsTrain$WordCount
+for (i in 1:11) {
+  printf("i = %d\n",i)
+  trainsubsets[[i]]$UniqueID = trains[[i]]$UniqueID
+  trainsubsets[[i]]$Popular = trains[[i]]$Popular
+  trainsubsets[[i]]$NewsDesk = trains[[i]]$NewsDesk
+  trainsubsets[[i]]$SectionName = trains[[i]]$SectionName
+  #Date = strptime(trains[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
+  #trainsubsets[[i]]$Weekday = as.factor(weekdays(Date))
+  #trainsubsets[[i]]$Hour = as.factor(Date$hour)
+  trainsubsets[[i]]$WordCount = trains[[i]]$WordCount
+  
+  testsubsets[[i]]$UniqueID = tests[[i]]$UniqueID
+  testsubsets[[i]]$NewsDesk = tests[[i]]$NewsDesk
+  testsubsets[[i]]$SectionName = tests[[i]]$SectionName
+  #Date = strptime(tests[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
+  #testsubsets[[i]]$Weekday = as.factor(weekdays(Date))
+  #testsubsets[[i]]$Hour = as.factor(Date$hour)
+  testsubsets[[i]]$WordCount = tests[[i]]$WordCount
 
-trainsubsets = split(Train, Train$NewsDesk)
+}
 
-Test$UniqueID = NewsTest$UniqueID
-Test$NewsDesk  = NewsTest$NewsDesk
-Test$SectionName = NewsTest$SectionName
-Test$SubsectionName = NewsTest$SubsectionName
-Date = strptime(NewsTest$PubDate, format="%Y-%m-%d %H:%M:%S")
-Test$Weekday = as.factor(weekdays(Date))
-Test$Hour = as.factor(Date$hour)
-Test$WordCount = NewsTest$WordCount
-#remove Magazine column
-#Test = subset(Train, Test$NewsDesk!="Magazine")
 
-testsubsets = split(Test, Test$NewsDesk)
+#trainsubsets = split(Train, Train$NewsDesk)
+
+#Test$UniqueID = NewsTest$UniqueID
+#Test$NewsDesk  = NewsTest$NewsDesk
+#Test$SectionName = NewsTest$SectionName
+#Test$SubsectionName = NewsTest$SubsectionName
+#Date = strptime(NewsTest$PubDate, format="%Y-%m-%d %H:%M:%S")
+#Test$Weekday = as.factor(weekdays(Date))
+#Test$Hour = as.factor(Date$hour)
+#Test$WordCount = NewsTest$WordCount
+
+#testsubsets = split(Test, Test$NewsDesk)
 
 predtests = list()
 for (i in 1:11) {
