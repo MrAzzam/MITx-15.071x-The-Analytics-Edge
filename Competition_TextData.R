@@ -98,23 +98,26 @@ for (i in 1:11) {
 #Train$Weekday = as.factor(weekdays(Date))
 #Train$Hour = as.factor(Date$hour)
 #Train$WordCount = NewsTrain$WordCount
+date1 = list()
+date2 = list()
+
 for (i in 1:11) {
   printf("i = %d\n",i)
   trainsubsets[[i]]$UniqueID = trains[[i]]$UniqueID
   trainsubsets[[i]]$Popular = trains[[i]]$Popular
   trainsubsets[[i]]$NewsDesk = trains[[i]]$NewsDesk
   trainsubsets[[i]]$SectionName = trains[[i]]$SectionName
-  #Date = strptime(trains[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
-  #trainsubsets[[i]]$Weekday = as.factor(weekdays(Date))
-  #trainsubsets[[i]]$Hour = as.factor(Date$hour)
+  date1[[i]] = strptime(trains[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
+  trainsubsets[[i]]$Weekday = as.factor(weekdays(date1[[i]]))
+#  trainsubsets[[i]]$Hour = as.factor(date1[[i]]$hour)
   trainsubsets[[i]]$WordCount = trains[[i]]$WordCount
   
   testsubsets[[i]]$UniqueID = tests[[i]]$UniqueID
   testsubsets[[i]]$NewsDesk = tests[[i]]$NewsDesk
   testsubsets[[i]]$SectionName = tests[[i]]$SectionName
-  #Date = strptime(tests[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
-  #testsubsets[[i]]$Weekday = as.factor(weekdays(Date))
-  #testsubsets[[i]]$Hour = as.factor(Date$hour)
+  date2[[i]] = strptime(tests[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
+  testsubsets[[i]]$Weekday = as.factor(weekdays(date2[[i]]))
+#  testsubsets[[i]]$Hour = as.factor(date2[[i]]$hour)
   testsubsets[[i]]$WordCount = tests[[i]]$WordCount
 
 }
