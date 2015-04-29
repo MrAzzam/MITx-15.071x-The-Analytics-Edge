@@ -28,7 +28,7 @@ getwords <- function(vector, ratio) {
 printf <- function(...) cat(sprintf(...))
 modelrf<-function(nytdata)
 {  
-  nytRF = randomForest(Popular ~ . - UniqueID, data=nytdata, method="class", ntree=200, nodesize=25) 
+  nytRF = randomForest(Popular ~ . - UniqueID, data=nytdata, method="class") 
   predictRF = predict(nytRF, newdata=nytdata)
   
   predROCR = prediction(predictRF, nytdata$Popular)
@@ -75,33 +75,35 @@ NewsTest$SubsectionName = as.factor(NewsTest$SubsectionName)
 
 trains = split(NewsTrain, NewsTrain$NewsDesk)
 tests = split(NewsTest, NewsTest$NewsDesk)
+
+trains<-list()
+tests<-list()
+
+total = 1
+
+trains[[1]] = subset(NewsTrain, NewsTrain$NewsDesk == "Business" | NewsTrain$NewsDesk == "Foreign" | NewsTrain$NewsDesk == "OpEd")
+trains[[2]] = subset(NewsTrain, !(NewsTrain$NewsDesk == "Business" | NewsTrain$NewsDesk == "Foreign" | NewsTrain$NewsDesk == "OpEd"))
+trains[[1]] = NewsTrain
+
+tests[[1]] = subset(NewsTest, NewsTest$NewsDesk == "Business" | NewsTest$NewsDesk == "Foreign" | NewsTest$NewsDesk == "OpEd")
+tests[[2]] = subset(NewsTest, !(NewsTest$NewsDesk == "Business" | NewsTest$NewsDesk == "Foreign" | NewsTest$NewsDesk == "OpEd"))
+tests[[1]] = NewsTest
+
 trainsubsets = list()
 testsubsets = list()
 
 # TRAINING DATA
-for (i in 1:11) {
-  bagofwords = getwords(c(trains[[i]]$Snippet, tests[[i]]$Snippet), ratio = 0.99)
+for (i in 1:total) {
+  bagofwords = getwords(c(trains[[i]]$Snippet, tests[[i]]$Snippet), ratio = 0.995)
   colnames(bagofwords) = make.names(colnames(bagofwords))
   trainsubsets[[i]] = head(bagofwords, nrow(trains[[i]]))
   testsubsets[[i]] = tail(bagofwords, nrow(tests[[i]]))
 }
 
-# Packing Independent Variables
-#Train = head(bagofwords, nrow(NewsTrain))
-#Test = tail(bagofwords, nrow(NewsTest))
-
-#Train$UniqueID = NewsTrain$UniqueID
-#Train$NewsDesk = NewsTrain$NewsDesk
-#Train$SectionName = NewsTrain$SectionName
-#Train$SubsectionName = NewsTrain$SubsectionName
-#Date = strptime(NewsTrain$PubDate, format="%Y-%m-%d %H:%M:%S")
-#Train$Weekday = as.factor(weekdays(Date))
-#Train$Hour = as.factor(Date$hour)
-#Train$WordCount = NewsTrain$WordCount
 date1 = list()
 date2 = list()
 
-for (i in 1:11) {
+for (i in 1:total) {
   printf("i = %d\n",i)
   trainsubsets[[i]]$UniqueID = trains[[i]]$UniqueID
   trainsubsets[[i]]$Popular = trains[[i]]$Popular
@@ -109,7 +111,7 @@ for (i in 1:11) {
   trainsubsets[[i]]$SectionName = trains[[i]]$SectionName
   date1[[i]] = strptime(trains[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
   trainsubsets[[i]]$Weekday = as.factor(weekdays(date1[[i]]))
-#  trainsubsets[[i]]$Hour = as.factor(date1[[i]]$hour)
+  trainsubsets[[i]]$Hour = as.factor(date1[[i]]$hour)
   trainsubsets[[i]]$WordCount = trains[[i]]$WordCount
   
   testsubsets[[i]]$UniqueID = tests[[i]]$UniqueID
@@ -117,57 +119,38 @@ for (i in 1:11) {
   testsubsets[[i]]$SectionName = tests[[i]]$SectionName
   date2[[i]] = strptime(tests[[i]]$PubDate, format="%Y-%m-%d %H:%M:%S")
   testsubsets[[i]]$Weekday = as.factor(weekdays(date2[[i]]))
-#  testsubsets[[i]]$Hour = as.factor(date2[[i]]$hour)
+  testsubsets[[i]]$Hour = as.factor(date2[[i]]$hour)
   testsubsets[[i]]$WordCount = tests[[i]]$WordCount
 
 }
 
-
-#trainsubsets = split(Train, Train$NewsDesk)
-
-#Test$UniqueID = NewsTest$UniqueID
-#Test$NewsDesk  = NewsTest$NewsDesk
-#Test$SectionName = NewsTest$SectionName
-#Test$SubsectionName = NewsTest$SubsectionName
-#Date = strptime(NewsTest$PubDate, format="%Y-%m-%d %H:%M:%S")
-#Test$Weekday = as.factor(weekdays(Date))
-#Test$Hour = as.factor(Date$hour)
-#Test$WordCount = NewsTest$WordCount
-
-#testsubsets = split(Test, Test$NewsDesk)
-
 predtests = list()
-for (i in 1:11) {
-  if (i!=5) {
-    predtests[[i]] = predict(modelrf(trainsubsets[[i]]), newdata=as.data.frame(testsubsets[[i]]))
+for (i in 1:total) {
+  # if (i != 5)
+  {
+    printf("predicting i %d\n",i)
+    predtests[[i]] = predict(modelrf(trainsubsets[[i]]), newdata=as.data.frame(testsubsets[[i]]), type="class")
     for (j in 1:length(predtests[[i]])) {
       if (predtests[[i]][j]<0) {
-        predtests[[i]][j] = 0
+       predtests[[i]][j] = 0
       }
     }
   }
-  else
-    predtests[[5]] = rep(0.0,nrow(testsubsets[[5]]))
+  #else
+  #  predtests[[5]] = rep(0.0,nrow(testsubsets[[5]]))
 }
 
 df = list()
-for (i in 1:11) {
+for (i in 1:total) {
   printf("i = %d\n",i)
   df[[i]] = data.frame(UniqueID = testsubsets[[i]]$UniqueID, Probability1 = predtests[[i]])
 }
 
 MySubmission = Reduce(function(x, y) merge(x, y, all=TRUE),
-                      list(df[[1]],
-                           df[[2]],
-                           df[[3]],
-                           df[[4]],
-                           df[[5]],
-                           df[[6]],
-                           df[[7]],
-                           df[[8]],
-                           df[[9]],
-                           df[[10]],
-                           df[[11]]))
+                      list(df[[1]]                         
+                           #,df[[2]]
+                           #,df[[3]],df[[4]],df[[5]],df[[6]],df[[7]],df[[8]],df[[9]],df[[10]],df[[11]]
+                           ))
 
 write.csv(MySubmission, "SubmissionHeadlineLog.csv", row.names=FALSE)
 
