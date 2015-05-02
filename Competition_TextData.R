@@ -5,6 +5,7 @@ set.seed(1000)
 library(tm)
 library(randomForest)
 library(ROCR)
+library(mice)
 
 # Utility routines
 getwords <- function(vector, ratio) {
@@ -49,7 +50,10 @@ NewsTest = read.csv("NYTimesBlogTest.csv", stringsAsFactors=FALSE)
 NewsTest$WordCount = as.integer(NewsTest$WordCount/100)
 
 # TRAINING DATA
-bagofwords = getwords(c(NewsTrain$Snippet, NewsTest$Snippet), ratio = 0.99)
+NewsTrain$Snippet = paste(NewsTrain$Headline, NewsTrain$Snippet)
+NewsTest$Snippet  = paste(NewsTest$Headline,  NewsTest$Snippet)
+
+bagofwords = getwords(c(NewsTrain$Snippet, NewsTest$Snippet), ratio = 0.999)
 
 colnames(bagofwords) = make.names(colnames(bagofwords))
 
