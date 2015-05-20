@@ -1,5 +1,3 @@
-setwd("/Users/chicheongweng/Downloads")
-
 census = read.csv("census.csv")
 library(caTools)
 set.seed(2000)
